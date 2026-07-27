@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>图片评论</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+        background: #121217;
+        color: #f4f4f8;
+        padding: 24px 16px 40px;
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 20px;
+      }
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 16px;
+      }
+      .meta {
+        margin-top: 16px;
+        color: #c8c8d2;
+      }
+      .actions {
+        margin-top: 16px;
+      }
+      .actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.06);
+        color: #f4f4f8;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .giscus {
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <img id="image" src="" alt="图片评论" />
+        <div class="meta" id="meta">正在加载图片信息...</div>
+        <div class="actions">
+          <a href="#" id="back-link">返回上一页</a>
+        </div>
+        <div class="giscus" id="giscus-root"></div>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const imageUrl = params.get('image') || '';
+      const title = params.get('title') || '图片评论';
+      const repo = params.get('repo') || '';
+      const repoId = params.get('repoId') || '';
+      const category = params.get('category') || 'Announcements';
+      const categoryId = params.get('categoryId') || '';
+      const term = params.get('term') || 'gallery';
+      const returnTo = params.get('returnTo') || '';
+
+      const imageEl = document.getElementById('image');
+      const metaEl = document.getElementById('meta');
+      const rootEl = document.getElementById('giscus-root');
+      const backLink = document.getElementById('back-link');
+
+      if (imageUrl) {
+        imageEl.src = imageUrl;
+      } else {
+        imageEl.style.display = 'none';
+      }
+
+      document.title = title;
+      metaEl.textContent = title;
+
+      if (backLink) {
+        backLink.addEventListener('click', function (event) {
+          event.preventDefault();
+          if (returnTo) {
+            window.location.href = returnTo;
+          } else if (document.referrer && document.referrer !== window.location.href) {
+            window.location.href = document.referrer;
+          } else if (window.history.length > 1) {
+            window.history.back();
+          } else {
+            window.location.href = './index.html';
+          }
+        });
+      }
+
+      if (repo && repoId && categoryId) {
+        const script = document.createElement('script');
+        script.src = 'https://giscus.app/client.js';
+        script.async = true;
+        script.setAttribute('data-repo', repo);
+        script.setAttribute('data-repo-id', repoId);
+        script.setAttribute('data-category', category);
+        script.setAttribute('data-category-id', categoryId);
+        script.setAttribute('data-mapping', 'specific');
+        script.setAttribute('data-term', term);
+        script.setAttribute('data-strict', '1');
+        script.setAttribute('data-reactions-enabled', '1');
+        script.setAttribute('data-emit-metadata', '0');
+        script.setAttribute('data-input-position', 'top');
+        script.setAttribute('data-theme', 'preferred_color_scheme');
+        script.setAttribute('data-lang', 'zh-CN');
+        script.crossOrigin = 'anonymous';
+        rootEl.appendChild(script);
+      } else {
+        rootEl.innerHTML = '<p>评论配置还未完成，请先配置 giscus 的仓库信息。</p>';
+      }
+    </script>
+  </body>
+</html>

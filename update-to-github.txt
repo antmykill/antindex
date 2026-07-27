@@ -1,0 +1,19 @@
+把网站更新到 GitHub 的命令
+
+1. 进入项目目录
+cd D:\Project\AntIndex
+
+2. 把所有改动加入 Git
+git add .
+
+3. 提交到本地仓库
+git commit -m "更新网站内容"
+
+4. 推送到 GitHub
+git push origin main
+
+如果你是第一次推送，需要先执行下面这几条：
+
+git remote add origin https://github.com/你的用户名/你的仓库名.git
+git branch -M main
+git push -u origin main

@@ -295,16 +295,7 @@
       .replace(/^-+|-+$/g, '') || 'gallery';
   }
 
-  function hashString(value) {
-    let hash = 0;
-    for (let i = 0; i < value.length; i += 1) {
-      hash = ((hash << 5) - hash) + value.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash).toString(36);
-  }
-
-  function getCommentTerm(folderName, files, config) {
+  function getCommentLink(folderName, files, config) {
     const prefix = String(config.giscusConfig?.termPrefix || 'gallery').trim() || 'gallery';
     const pageKey = typeof window !== 'undefined' && window.location.pathname
       ? slugify(window.location.pathname)
@@ -312,8 +303,14 @@
     const imageKey = files && (files.large || files.medium || files.small)
       ? slugify(files.large || files.medium || files.small)
       : slugify(folderName);
-    const rawTerm = `${prefix}-${pageKey}-${imageKey}-${slugify(folderName)}`;
-    return rawTerm.length > 96 ? `${rawTerm.slice(0, 90)}-${hashString(rawTerm)}` : rawTerm;
+    const term = `${prefix}-${pageKey}-${imageKey}-${slugify(folderName)}`;
+
+    const repo = String(config.giscusConfig?.repo || '').trim();
+    if (!repo) return null;
+
+    const encodedTerm = encodeURIComponent(term);
+    const encodedRepo = encodeURIComponent(repo);
+    return `https://giscus.app/client.js?repo=${encodedRepo}&category=${encodeURIComponent(String(config.giscusConfig?.category || 'General'))}&mapping=${encodeURIComponent(String(config.giscusConfig?.mapping || 'specific'))}&term=${encodedTerm}`;
   }
 
   function createCommentSection(folderName, files, config) {
@@ -331,50 +328,39 @@
     wrapper.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))';
     wrapper.style.borderRadius = '0 0 16px 16px';
 
-    const header = document.createElement('button');
-    header.type = 'button';
-    header.style.display = 'flex';
-    header.style.alignItems = 'center';
-    header.style.justifyContent = 'space-between';
-    header.style.width = '100%';
-    header.style.border = 'none';
-    header.style.background = 'transparent';
-    header.style.color = '#f4f4f8';
-    header.style.fontSize = '0.95rem';
-    header.style.fontWeight = '600';
-    header.style.padding = '8px 10px';
-    header.style.cursor = 'pointer';
-    header.style.textAlign = 'left';
-    header.style.borderRadius = '10px';
-    header.style.background = 'rgba(255,255,255,0.04)';
-    header.setAttribute('aria-expanded', 'false');
-
-    const title = document.createElement('span');
-    title.textContent = '评论区';
-    header.appendChild(title);
-
-    const arrow = document.createElement('span');
-    arrow.textContent = '▶';
-    arrow.style.transition = 'transform 0.2s ease';
-    arrow.style.marginLeft = '8px';
-    header.appendChild(arrow);
-
-    const body = document.createElement('div');
-    body.style.display = 'none';
-    body.style.marginTop = '10px';
-    body.style.padding = '8px 2px 0';
-
-    header.addEventListener('click', () => {
-      const expanded = header.getAttribute('aria-expanded') === 'true';
-      header.setAttribute('aria-expanded', String(!expanded));
-      body.style.display = expanded ? 'none' : 'block';
-      arrow.style.transform = expanded ? 'rotate(0deg)' : 'rotate(90deg)';
+    const commentTerm = `${String(giscus.termPrefix || 'gallery').trim()}-${slugify(folderName)}-${slugify(files.large || files.medium || files.small || folderName)}`;
+    const params = new URLSearchParams({
+      image: files.large || files.medium || files.small || '',
+      title: `${folderName} 的评论`,
+      repo,
+      repoId,
+      category: String(giscus.category || 'Announcements'),
+      categoryId,
+      term: commentTerm,
+      returnTo: window.location.pathname + window.location.search + window.location.hash
     });
 
-    wrapper.appendChild(header);
+    const button = document.createElement('a');
+    button.href = `./comment-page.html?${params.toString()}`;
+    button.target = '_blank';
+    button.rel = 'noopener noreferrer';
+    button.style.display = 'inline-flex';
+    button.style.alignItems = 'center';
+    button.style.justifyContent = 'center';
+    button.style.padding = '10px 14px';
+    button.style.borderRadius = '10px';
+    button.style.background = 'rgba(255,255,255,0.06)';
+    button.style.color = '#f4f4f8';
+    button.style.textDecoration = 'none';
+    button.style.fontSize = '0.95rem';
+    button.style.fontWeight = '600';
+    button.textContent = '为这张图留言';
+
+    wrapper.appendChild(button);
 
     if (!repo || !repoId || !categoryId) {
       const notice = document.createElement('div');
+      notice.style.marginTop = '10px';
       notice.style.padding = '12px 14px';
       notice.style.borderRadius = '12px';
       notice.style.background = 'rgba(255,255,255,0.05)';
@@ -382,37 +368,11 @@
       notice.style.color = '#c8c8d2';
       notice.style.fontSize = '0.92rem';
       notice.style.lineHeight = '1.6';
-      notice.innerHTML = '评论区已接入，当前还没有配置 giscus 的仓库信息。请在页面初始化时填写 repo、repoId 和 categoryId。';
+      notice.innerHTML = '评论入口已就绪，但当前仓库配置还未完成，暂时显示为留言入口。';
       wrapper.appendChild(notice);
       return wrapper;
     }
 
-    const commentTerm = getCommentTerm(folderName, files, config);
-    const container = document.createElement('div');
-    container.className = 'giscus';
-    container.id = `giscus-${slugify(`${commentTerm}-${Date.now()}`)}`;
-
-    const script = document.createElement('script');
-    script.src = 'https://giscus.app/client.js';
-    script.async = true;
-    script.setAttribute('data-repo', repo);
-    script.setAttribute('data-repo-id', repoId);
-    script.setAttribute('data-category', String(giscus.category || 'General'));
-    script.setAttribute('data-category-id', categoryId);
-    script.setAttribute('data-mapping', String(giscus.mapping || 'specific'));
-    script.setAttribute('data-term', commentTerm);
-    script.setAttribute('data-strict', String(giscus.strict || '0'));
-    script.setAttribute('data-reactions-enabled', String(giscus.reactionsEnabled || '1'));
-    script.setAttribute('data-emit-metadata', String(giscus.emitMetadata || '0'));
-    script.setAttribute('data-input-position', String(giscus.inputPosition || 'bottom'));
-    script.setAttribute('data-theme', String(giscus.theme || 'preferred_color_scheme'));
-    script.setAttribute('data-lang', String(giscus.lang || 'zh-CN'));
-    script.setAttribute('data-loading', String(giscus.loading || 'lazy'));
-    script.crossOrigin = 'anonymous';
-
-    container.appendChild(script);
-    body.appendChild(container);
-    wrapper.appendChild(body);
     return wrapper;
   }
 
