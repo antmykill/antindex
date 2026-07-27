@@ -346,9 +346,9 @@
       returnTo: window.location.pathname + window.location.search + window.location.hash
     });
 
+    const commentUrl = `./comment-page.html?${params.toString()}`;
     const button = document.createElement('a');
-    button.href = `./comment-page.html?${params.toString()}`;
-    button.target = '_blank';
+    button.href = commentUrl;
     button.rel = 'noopener noreferrer';
     button.style.display = 'inline-flex';
     button.style.alignItems = 'center';
@@ -361,6 +361,10 @@
     button.style.fontSize = '0.95rem';
     button.style.fontWeight = '600';
     button.textContent = '为这张图留言';
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.assign(commentUrl);
+    });
 
     wrapper.appendChild(button);
 

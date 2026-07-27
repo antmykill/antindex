@@ -73,6 +73,13 @@
       const categoryId = params.get('categoryId') || '';
       const imageId = params.get('imageId') || '';
       const term = params.get('term') || imageId || 'gallery';
+      const mapping = params.get('mapping') || 'specific';
+      const strict = params.get('strict') || '1';
+      const reactionsEnabled = params.get('reactionsEnabled') || '1';
+      const emitMetadata = params.get('emitMetadata') || '0';
+      const inputPosition = params.get('inputPosition') || 'top';
+      const theme = params.get('theme') || 'preferred_color_scheme';
+      const lang = params.get('lang') || 'zh-CN';
       const returnTo = params.get('returnTo') || '';
 
       const imageEl = document.getElementById('image');
@@ -105,6 +112,7 @@
       }
 
       if (repo && repoId && categoryId) {
+        rootEl.innerHTML = '<p>正在加载评论组件…</p>';
         const script = document.createElement('script');
         script.src = 'https://giscus.app/client.js';
         script.async = true;
@@ -112,15 +120,21 @@
         script.setAttribute('data-repo-id', repoId);
         script.setAttribute('data-category', category);
         script.setAttribute('data-category-id', categoryId);
-        script.setAttribute('data-mapping', 'specific');
+        script.setAttribute('data-mapping', mapping);
         script.setAttribute('data-term', term);
-        script.setAttribute('data-strict', '1');
-        script.setAttribute('data-reactions-enabled', '1');
-        script.setAttribute('data-emit-metadata', '0');
-        script.setAttribute('data-input-position', 'top');
-        script.setAttribute('data-theme', 'preferred_color_scheme');
-        script.setAttribute('data-lang', 'zh-CN');
+        script.setAttribute('data-strict', strict);
+        script.setAttribute('data-reactions-enabled', reactionsEnabled);
+        script.setAttribute('data-emit-metadata', emitMetadata);
+        script.setAttribute('data-input-position', inputPosition);
+        script.setAttribute('data-theme', theme);
+        script.setAttribute('data-lang', lang);
         script.crossOrigin = 'anonymous';
+        script.onload = () => {
+          rootEl.querySelector('p')?.remove();
+        };
+        script.onerror = () => {
+          rootEl.innerHTML = '<p>giscus 脚本加载失败。请检查 GitHub Discussions 是否已启用，以及 repo / repoId / categoryId 是否正确。</p>';
+        };
         rootEl.appendChild(script);
       } else {
         rootEl.innerHTML = '<p>评论配置还未完成，请先配置 giscus 的仓库信息。</p>';
