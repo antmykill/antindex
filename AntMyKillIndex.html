@@ -1,0 +1,33 @@
+<!-- 这是主页面 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="蚁丘米丘的个人网站" />
+    <meta name="keywords" content="个人网站,独立创作者" />
+    <meta name="author" content="蚁丘米丘" />
+    <title>蚁丘米丘的个人小站</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>蚁丘米丘的个人小站（施工中）</h1>
+    </header>
+    <p>欢迎来到蚁丘米丘小站！ 米丘刚开始学HTML，所以网站还很简陋。^_^</p>
+    <p>目前网站仅用来存放图片。（主要用来存放一些微博不能放的图片。）</p>
+    <div class="button-group">
+      <a class="button" href="AllAges.html">大众的绘图</a>
+      <a id="age-check" class="button button-red" href="AgeRestricted.html">大人的绘图</a>
+    </div>
+
+    <script>
+      document.getElementById('age-check').addEventListener('click', function (event) {
+        var confirmAge = window.confirm('你确定年满18岁了吗？');
+        if (!confirmAge) {
+          event.preventDefault();
+        }
+      });
+    </script>
+  </body>
+</html>

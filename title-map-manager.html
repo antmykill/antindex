@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gallery Title Map 管理</title>
+    <style>
+      body { margin: 0; font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; background: #121217; color: #f4f4f8; }
+      .page { max-width: 960px; margin: 0 auto; padding: 24px; }
+      h1 { margin-top: 0; }
+      .note { background: #181826; border: 1px solid #33354d; border-radius: 16px; padding: 18px; color: #d4d4e1; }
+      .form-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-bottom: 10px; }
+      input, textarea, select, button { font: inherit; border-radius: 10px; border: 1px solid #33354d; background: #161625; color: #f4f4f8; }
+      input, select, textarea { width: 100%; padding: 10px; }
+      button { padding: 10px 16px; cursor: pointer; }
+      button:disabled { opacity: .55; cursor: not-allowed; }
+      .grid { display: grid; gap: 14px; margin-top: 20px; }
+      .card { padding: 16px; border: 1px solid #33354d; border-radius: 16px; background: #161625; }
+      .card label { display: block; margin-bottom: 6px; color: #b6b6c8; }
+      .card input { width: 100%; }
+      .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+      .status { margin-top: 16px; color: #8ab6f3; }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <h1>Gallery 标题管理</h1>
+      <p class="note">这个页面可读取并编辑指定目录下的 title-map.json。它仅适用于通过服务器访问（例如 GitHub Pages 或本地服务器）。</p>
+      <div class="form-row">
+        <input id="manifestPath" type="text" placeholder="输入 title-map.json 路径，例如 ./artworks/age-restricted/title-map.json" value="./artworks/age-restricted/title-map.json" />
+        <button id="loadBtn">加载</button>
+      </div>
+      <div class="actions">
+        <button id="addBtn">新增映射</button>
+        <button id="saveBtn" disabled>保存到 JSON</button>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="list" class="grid"></div>
+    </div>
+
+    <script>
+      const loadBtn = document.getElementById('loadBtn');
+      const saveBtn = document.getElementById('saveBtn');
+      const addBtn = document.getElementById('addBtn');
+      const manifestPathInput = document.getElementById('manifestPath');
+      const listEl = document.getElementById('list');
+      const statusEl = document.getElementById('status');
+      let manifestPath = manifestPathInput.value;
+      let titleMap = {};
+
+      function setStatus(text, error = false) {
+        statusEl.textContent = text;
+        statusEl.style.color = error ? '#f38a8a' : '#8ab6f3';
+      }
+
+      function renderList() {
+        listEl.innerHTML = '';
+        const keys = Object.keys(titleMap).sort();
+        if (!keys.length) {
+          listEl.innerHTML = '<div class="card">当前映射为空。点击“新增映射”添加条目。</div>';
+          return;
+        }
+        keys.forEach((folderName) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          const titleLabel = document.createElement('label');
+          titleLabel.textContent = '文件夹名';
+          const titleInput = document.createElement('input');
+          titleInput.value = folderName;
+          titleInput.readOnly = true;
+          card.appendChild(titleLabel);
+          card.appendChild(titleInput);
+
+          const nameLabel = document.createElement('label');
+          nameLabel.textContent = '显示标题';
+          const nameInput = document.createElement('input');
+          nameInput.value = titleMap[folderName] || '';
+          nameInput.addEventListener('input', () => {
+            titleMap[folderName] = nameInput.value;
+            saveBtn.disabled = false;
+          });
+          card.appendChild(nameLabel);
+          card.appendChild(nameInput);
+
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          const removeBtn = document.createElement('button');
+          removeBtn.textContent = '删除';
+          removeBtn.type = 'button';
+          removeBtn.addEventListener('click', () => {
+            delete titleMap[folderName];
+            renderList();
+            saveBtn.disabled = false;
+          });
+          actions.appendChild(removeBtn);
+          card.appendChild(actions);
+
+          listEl.appendChild(card);
+        });
+      }
+
+      async function loadManifest() {
+        manifestPath = manifestPathInput.value.trim();
+        if (!manifestPath) {
+          setStatus('请先输入 title-map.json 路径。', true);
+          return;
+        }
+        try {
+          const response = await fetch(manifestPath, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+          const json = await response.json();
+          if (!json || typeof json !== 'object' || Array.isArray(json)) {
+            throw new Error('title-map.json 必须是一个对象。');
+          }
+          titleMap = json;
+          renderList();
+          saveBtn.disabled = false;
+          setStatus('已成功加载 title-map.json。你现在可以编辑并保存。');
+        } catch (error) {
+          setStatus('加载失败：' + error.message, true);
+        }
+      }
+
+      function addMapping() {
+        const folderName = prompt('输入要新增的文件夹名（例如 20260728_003）：');
+        if (!folderName) return;
+        if (titleMap[folderName]) {
+          setStatus('该映射已存在，请直接修改已有条目。', true);
+          return;
+        }
+        titleMap[folderName] = '';
+        renderList();
+        saveBtn.disabled = false;
+      }
+
+      async function saveManifest() {
+        const jsonText = JSON.stringify(titleMap, null, 2);
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = manifestPath.split('/').pop() || 'title-map.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        setStatus('已生成下载文件，请保存到对应目录。');
+      }
+
+      loadBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        loadManifest();
+      });
+
+      addBtn.addEventListener('click', addMapping);
+      saveBtn.addEventListener('click', saveManifest);
+      renderList();
+    </script>
+  </body>
+</html>

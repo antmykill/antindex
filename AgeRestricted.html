@@ -1,0 +1,89 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="蚁丘米丘的大人作品展示页面" />
+    <meta name="keywords" content="个人网站,独立创作者,作品展示" />
+    <meta name="author" content="蚁丘米丘" />
+    <title>蚁丘米丘的大人绘图</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+        background: #121217;
+        color: #f4f4f8;
+      }
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 24px 18px 40px;
+      }
+      header h1 {
+        margin: 0 0 14px;
+        font-size: 2rem;
+      }
+      .intro {
+        color: #c8c8d2;
+        line-height: 1.8;
+        max-width: 760px;
+      }
+      .note {
+        background: #181826;
+        border: 1px solid #33354d;
+        border-radius: 16px;
+        padding: 18px;
+        color: #d4d4e1;
+        margin-top: 24px;
+      }
+      .gallery {
+        display: grid;
+        gap: 24px;
+        margin-top: 26px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>蚁丘米丘的大人绘图</h1>
+      </header>
+      <p style="color: #ffffff;">请自行决定是否查看图片。^_^</p>
+      <div id="message" class="note">
+        正在加载 artworks/age-restricted 中的图片...
+      </div>
+      <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script src="./gallery-loader.js"></script>
+    <script>
+      GalleryLoader.initPage({
+        rootPath: "./artworks/age-restricted/",
+        folderManifest: "./artworks/age-restricted/folders.json",
+        titleMapManifest: "./artworks/age-restricted/title-map.json",
+        sortOrder: "desc",
+        description: "自动选择最合适的图片尺寸。",
+        collapsibleCards: true,
+        collapsedByDefault: true,
+        allowDirectoryListing: false,
+        commentsEnabled: true,
+        giscusConfig: {
+          repo: "antmykill/antindex",
+          repoId: "R_kgDOTlaTYg",
+          category: "Announcements",
+          categoryId: "DIC_kwDOTlaTYs4DCG7_",
+          mapping: "specific",
+          termPrefix: "gallery",
+          strict: "1",
+          reactionsEnabled: "1",
+          emitMetadata: "0",
+          inputPosition: "top",
+          theme: "preferred_color_scheme",
+          lang: "zh-CN",
+          loading: "lazy"
+        },
+      });
+    </script>
+  </body>
+</html>

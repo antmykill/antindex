@@ -1,0 +1,91 @@
+/* 这是网站的外部样式文件 */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+  line-height: 1.7;
+  color: #0b2b5e;
+  background: #e7f4f2;
+}
+
+header {
+  background: linear-gradient(135deg, #4bc3b5 0%, #86e1d6 100%);
+  padding: 32px 16px;
+  text-align: center;
+  box-shadow: 0 4px 25px rgba(18, 83, 81, 0.12);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #072047;
+}
+
+main {
+  max-width: 900px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+p {
+  margin: 0 0 1.6rem;
+  color: #0b2b5e;
+  font-size: 1rem;
+}
+
+.container {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 14px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  margin: 0.75rem auto;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1e5f7d 0%, #3ea7b8 100%);
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(30, 95, 125, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(30, 95, 125, 0.24);
+  opacity: 0.95;
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+.button-red {
+  background: linear-gradient(135deg, #d75d5d 0%, #f28f8f 100%);
+  box-shadow: 0 12px 24px rgba(215, 93, 93, 0.22);
+}
+
+.button-red:hover {
+  box-shadow: 0 16px 28px rgba(215, 93, 93, 0.28);
+}
