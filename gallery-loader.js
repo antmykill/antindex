@@ -295,6 +295,15 @@
       .replace(/^-+|-+$/g, '') || 'gallery';
   }
 
+  function hashString(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i += 1) {
+      hash = ((hash << 5) - hash) + value.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(36);
+  }
+
   function getCommentTerm(folderName, files, config) {
     const prefix = String(config.giscusConfig?.termPrefix || 'gallery').trim() || 'gallery';
     const pageKey = typeof window !== 'undefined' && window.location.pathname
@@ -303,7 +312,8 @@
     const imageKey = files && (files.large || files.medium || files.small)
       ? slugify(files.large || files.medium || files.small)
       : slugify(folderName);
-    return `${prefix}-${pageKey}-${imageKey}-${slugify(folderName)}`;
+    const rawTerm = `${prefix}-${pageKey}-${imageKey}-${slugify(folderName)}`;
+    return rawTerm.length > 96 ? `${rawTerm.slice(0, 90)}-${hashString(rawTerm)}` : rawTerm;
   }
 
   function createCommentSection(folderName, files, config) {
@@ -316,9 +326,9 @@
 
     const wrapper = document.createElement('div');
     wrapper.style.marginTop = '16px';
-    wrapper.style.padding = '14px 16px';
-    wrapper.style.borderTop = '1px solid rgba(255,255,255,0.10)';
-    wrapper.style.background = 'rgba(255,255,255,0.03)';
+    wrapper.style.padding = '14px 16px 12px';
+    wrapper.style.borderTop = '1px solid rgba(255,255,255,0.12)';
+    wrapper.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))';
     wrapper.style.borderRadius = '0 0 16px 16px';
 
     const header = document.createElement('button');
@@ -332,9 +342,11 @@
     header.style.color = '#f4f4f8';
     header.style.fontSize = '0.95rem';
     header.style.fontWeight = '600';
-    header.style.padding = '0';
+    header.style.padding = '8px 10px';
     header.style.cursor = 'pointer';
     header.style.textAlign = 'left';
+    header.style.borderRadius = '10px';
+    header.style.background = 'rgba(255,255,255,0.04)';
     header.setAttribute('aria-expanded', 'false');
 
     const title = document.createElement('span');
@@ -350,6 +362,7 @@
     const body = document.createElement('div');
     body.style.display = 'none';
     body.style.marginTop = '10px';
+    body.style.padding = '8px 2px 0';
 
     header.addEventListener('click', () => {
       const expanded = header.getAttribute('aria-expanded') === 'true';
@@ -364,7 +377,7 @@
       const notice = document.createElement('div');
       notice.style.padding = '12px 14px';
       notice.style.borderRadius = '12px';
-      notice.style.background = 'rgba(255,255,255,0.04)';
+      notice.style.background = 'rgba(255,255,255,0.05)';
       notice.style.border = '1px dashed rgba(255,255,255,0.14)';
       notice.style.color = '#c8c8d2';
       notice.style.fontSize = '0.92rem';
@@ -376,7 +389,7 @@
 
     const commentTerm = getCommentTerm(folderName, files, config);
     const container = document.createElement('div');
-    container.className = 'giscus-container';
+    container.className = 'giscus';
     container.id = `giscus-${slugify(`${commentTerm}-${Date.now()}`)}`;
 
     const script = document.createElement('script');
