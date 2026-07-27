@@ -295,15 +295,19 @@
       .replace(/^-+|-+$/g, '') || 'gallery';
   }
 
+  function getStableImageId(folderName, files, config) {
+    const explicitId = config?.imageIdMap && config.imageIdMap[folderName];
+    if (explicitId) {
+      return slugify(explicitId);
+    }
+
+    const prefix = String(config?.giscusConfig?.termPrefix || 'gallery').trim() || 'gallery';
+    const folderToken = slugify(folderName || 'gallery');
+    return `${prefix}-${folderToken}`;
+  }
+
   function getCommentLink(folderName, files, config) {
-    const prefix = String(config.giscusConfig?.termPrefix || 'gallery').trim() || 'gallery';
-    const pageKey = typeof window !== 'undefined' && window.location.pathname
-      ? slugify(window.location.pathname)
-      : 'page';
-    const imageKey = files && (files.large || files.medium || files.small)
-      ? slugify(files.large || files.medium || files.small)
-      : slugify(folderName);
-    const term = `${prefix}-${pageKey}-${imageKey}-${slugify(folderName)}`;
+    const term = getStableImageId(folderName, files, config);
 
     const repo = String(config.giscusConfig?.repo || '').trim();
     if (!repo) return null;
@@ -328,7 +332,8 @@
     wrapper.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))';
     wrapper.style.borderRadius = '0 0 16px 16px';
 
-    const commentTerm = `${String(giscus.termPrefix || 'gallery').trim()}-${slugify(folderName)}-${slugify(files.large || files.medium || files.small || folderName)}`;
+    const stableImageId = getStableImageId(folderName, files, config);
+    const commentTerm = stableImageId;
     const params = new URLSearchParams({
       image: files.large || files.medium || files.small || '',
       title: `${folderName} 的评论`,
@@ -337,6 +342,7 @@
       category: String(giscus.category || 'Announcements'),
       categoryId,
       term: commentTerm,
+      imageId: stableImageId,
       returnTo: window.location.pathname + window.location.search + window.location.hash
     });
 

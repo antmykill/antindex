@@ -71,7 +71,8 @@
       const repoId = params.get('repoId') || '';
       const category = params.get('category') || 'Announcements';
       const categoryId = params.get('categoryId') || '';
-      const term = params.get('term') || 'gallery';
+      const imageId = params.get('imageId') || '';
+      const term = params.get('term') || imageId || 'gallery';
       const returnTo = params.get('returnTo') || '';
 
       const imageEl = document.getElementById('image');
