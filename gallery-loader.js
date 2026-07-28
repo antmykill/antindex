@@ -349,6 +349,7 @@
     const commentUrl = `./comment-page.html?${params.toString()}`;
     const button = document.createElement('a');
     button.href = commentUrl;
+    button.target = '_blank';
     button.rel = 'noopener noreferrer';
     button.style.display = 'inline-flex';
     button.style.alignItems = 'center';
