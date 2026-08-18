@@ -549,6 +549,20 @@
     pinchStartMidY: 0
   };
 
+  function getMinZoomScale() {
+    if (!zoomOverlayState.image || !zoomOverlayState.wrapper) return 0.25;
+    const naturalW = zoomOverlayState.image.naturalWidth;
+    const naturalH = zoomOverlayState.image.naturalHeight;
+    if (!naturalW || !naturalH) return 0.25;
+    const wrapperRect = zoomOverlayState.wrapper.getBoundingClientRect();
+    if (!wrapperRect.width || !wrapperRect.height) return 0.25;
+    return Math.min(wrapperRect.width / naturalW, wrapperRect.height / naturalH, 1);
+  }
+
+  function clampZoomScale(scale) {
+    return clamp(scale, getMinZoomScale(), 5);
+  }
+
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
   }
@@ -685,7 +699,7 @@
         const points = Array.from(zoomOverlayState.pointers.values());
         const distance = Math.hypot(points[0].clientX - points[1].clientX, points[0].clientY - points[1].clientY);
         if (zoomOverlayState.pinchStartDistance > 0) {
-          const newScale = clamp(zoomOverlayState.pinchStartScale * (distance / zoomOverlayState.pinchStartDistance), 0.25, 5);
+          const newScale = clampZoomScale(zoomOverlayState.pinchStartScale * (distance / zoomOverlayState.pinchStartDistance));
           const scaleRatio = newScale / zoomOverlayState.pinchStartScale;
           zoomOverlayState.scale = newScale;
           zoomOverlayState.translateX = clamp(
@@ -736,7 +750,7 @@
       const pointer = getWrapperCenterPoint(event.clientX, event.clientY);
       const prevScale = zoomOverlayState.scale;
       const delta = -event.deltaY * 0.002;
-      const newScale = clamp(prevScale + delta, 0.25, 5);
+      const newScale = clampZoomScale(prevScale + delta);
       if (newScale === prevScale) return;
       const scaleRatio = newScale / prevScale;
       zoomOverlayState.scale = newScale;
@@ -758,6 +772,12 @@
       if (event.key === 'Escape' && zoomOverlayState.container && zoomOverlayState.container.style.display === 'flex') {
         hideZoomOverlay();
       }
+    });
+
+    window.addEventListener('resize', () => {
+      if (!zoomOverlayState.container || zoomOverlayState.container.style.display !== 'flex') return;
+      zoomOverlayState.scale = clampZoomScale(zoomOverlayState.scale);
+      updateZoomImageTransform();
     });
 
     zoomOverlayState.container = container;
@@ -782,7 +802,7 @@
     caption.textContent = title || '';
 
     image.onload = () => {
-      zoomOverlayState.scale = 1;
+      zoomOverlayState.scale = clampZoomScale(1);
       zoomOverlayState.translateX = 0;
       zoomOverlayState.translateY = 0;
       updateZoomImageTransform();
