@@ -685,7 +685,7 @@
         const points = Array.from(zoomOverlayState.pointers.values());
         const distance = Math.hypot(points[0].clientX - points[1].clientX, points[0].clientY - points[1].clientY);
         if (zoomOverlayState.pinchStartDistance > 0) {
-          const newScale = clamp(zoomOverlayState.pinchStartScale * (distance / zoomOverlayState.pinchStartDistance), 0.5, 5);
+          const newScale = clamp(zoomOverlayState.pinchStartScale * (distance / zoomOverlayState.pinchStartDistance), 0.25, 5);
           const scaleRatio = newScale / zoomOverlayState.pinchStartScale;
           zoomOverlayState.scale = newScale;
           zoomOverlayState.translateX = clamp(
@@ -736,7 +736,7 @@
       const pointer = getWrapperCenterPoint(event.clientX, event.clientY);
       const prevScale = zoomOverlayState.scale;
       const delta = -event.deltaY * 0.002;
-      const newScale = clamp(prevScale + delta, 0.5, 5);
+      const newScale = clamp(prevScale + delta, 0.25, 5);
       if (newScale === prevScale) return;
       const scaleRatio = newScale / prevScale;
       zoomOverlayState.scale = newScale;
