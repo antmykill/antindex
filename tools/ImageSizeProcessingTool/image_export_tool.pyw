@@ -12,7 +12,7 @@ import shutil
 import sys
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageSequence
 except ImportError:
     import tkinter as tk
     from tkinter import messagebox
@@ -29,6 +29,7 @@ except ImportError:
 
 
 TARGET_WIDTHS = [400, 800, 1200]
+GIF_TRANSPARENCY_INDEX = 255
 
 
 def get_target_widths(original_width: int) -> list[int]:
@@ -39,14 +40,52 @@ def build_output_name(prefix: str, width: int, ext: str) -> str:
     return f'{prefix}_w{width}.{ext}'
 
 
+def resize_gif_frame(frame: Image.Image, size: tuple[int, int]) -> Image.Image:
+    resized = frame.convert('RGBA').resize(size, Image.Resampling.LANCZOS)
+    alpha = resized.getchannel('A')
+    quantized = resized.convert('RGB').quantize(
+        colors=GIF_TRANSPARENCY_INDEX,
+        method=Image.Quantize.MEDIANCUT,
+        dither=Image.Dither.FLOYDSTEINBERG,
+    )
+    palette = (quantized.getpalette() or [])[:GIF_TRANSPARENCY_INDEX * 3]
+    quantized.putpalette(palette + [0] * (768 - len(palette)))
+    transparent_mask = alpha.point(lambda value: 255 if value < 128 else 0)
+    quantized.paste(GIF_TRANSPARENCY_INDEX, mask=transparent_mask)
+    quantized.info['transparency'] = GIF_TRANSPARENCY_INDEX
+    return quantized
+
+
 def save_resized_images(image: Image.Image, widths: list[int], output_dir: Path, prefix: str, ext: str) -> list[Path]:
     output_paths = []
     for width in widths:
         ratio = width / image.width
         height = max(1, int(image.height * ratio))
-        resized = image.resize((width, height), Image.LANCZOS)
         output_name = build_output_name(prefix, width, ext)
         output_path = output_dir / output_name
+
+        if ext.lower() == 'gif' and getattr(image, 'is_animated', False):
+            frames = []
+            durations = []
+            disposals = []
+            for frame in ImageSequence.Iterator(image):
+                frames.append(resize_gif_frame(frame, (width, height)))
+                durations.append(frame.info.get('duration', image.info.get('duration', 100)))
+                disposals.append(getattr(frame, 'disposal_method', 2))
+            frames[0].save(
+                output_path,
+                save_all=True,
+                append_images=frames[1:],
+                duration=durations,
+                loop=image.info.get('loop', 0),
+                disposal=disposals,
+                transparency=GIF_TRANSPARENCY_INDEX,
+                optimize=False,
+            )
+            output_paths.append(output_path)
+            continue
+
+        resized = image.resize((width, height), Image.Resampling.LANCZOS)
         save_kwargs = {}
         if ext.lower() in ('jpg', 'jpeg'):
             save_kwargs['quality'] = 92
@@ -129,7 +168,7 @@ def export_images(input_path: Path, output_dir: Path, log_widget: tk.Text) -> Pa
         raise ValueError(error_message)
 
     with Image.open(input_path) as img:
-        if img.mode in ('RGBA', 'P', 'LA'):
+        if not getattr(img, 'is_animated', False) and img.mode in ('RGBA', 'P', 'LA'):
             img = img.convert('RGB')
         widths = get_target_widths(img.width)
         subfolder = create_next_subfolder(output_dir)

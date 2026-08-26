@@ -20,7 +20,7 @@
     messageId: 'message',
     rootPath: './artworks/age-restricted/',
     folderPattern: /^\d{8}_\d{3}$/,
-    supportedExt: ['jpg', 'jpeg', 'png'],
+    supportedExt: ['jpg', 'jpeg', 'png', 'gif'],
     sizes: [400, 800, 1200],
     sortOrder: 'desc',
     description: '自动选择最合适的图片尺寸。',
@@ -387,6 +387,128 @@
     return wrapper;
   }
 
+  function formatFileSize(bytes) {
+    if (!Number.isFinite(bytes)) return '大小未知';
+    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
+  }
+
+  async function getFileSize(url) {
+    try {
+      const response = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      const contentLengthHeader = response.headers.get('content-length');
+      const contentLength = Number(contentLengthHeader);
+      if (response.ok && contentLengthHeader !== null && Number.isFinite(contentLength) && contentLength >= 0) {
+        return contentLength;
+      }
+    } catch {
+      // Some static hosts do not support HEAD requests.
+    }
+
+    try {
+      const response = await fetch(url, { cache: 'force-cache' });
+      if (response.ok) return (await response.blob()).size;
+    } catch {
+      // Keep the download available even when its size cannot be read.
+    }
+    return null;
+  }
+
+  function createDownloadControl(files) {
+    const choices = [
+      { label: '大', url: files.large },
+      { label: '中', url: files.medium },
+      { label: '小', url: files.small }
+    ].filter((choice) => choice.url);
+    if (!choices.length) return null;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'inline-flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = 'flex-start';
+    wrapper.style.marginTop = '12px';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = '下载';
+    button.setAttribute('aria-haspopup', 'menu');
+    button.setAttribute('aria-expanded', 'false');
+    button.style.padding = '10px 14px';
+    button.style.borderRadius = '12px';
+    button.style.border = '1px solid rgba(255,255,255,0.16)';
+    button.style.background = 'rgba(255,255,255,0.06)';
+    button.style.color = '#f4f4f8';
+    button.style.font = 'inherit';
+    button.style.cursor = 'pointer';
+
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+    menu.style.marginTop = '8px';
+    menu.style.minWidth = '180px';
+    menu.style.padding = '6px';
+    menu.style.border = '1px solid rgba(255,255,255,0.16)';
+    menu.style.borderRadius = '10px';
+    menu.style.background = '#242432';
+    menu.style.boxShadow = '0 10px 28px rgba(0,0,0,0.35)';
+
+    let loaded = false;
+    async function loadChoices() {
+      if (loaded) return;
+      loaded = true;
+      const sizes = await Promise.all(choices.map((choice) => getFileSize(choice.url)));
+      menu.replaceChildren();
+      choices.forEach((choice, index) => {
+        const link = document.createElement('a');
+        link.href = choice.url;
+        link.download = choice.url.slice(choice.url.lastIndexOf('/') + 1);
+        link.textContent = `${choice.label}（${formatFileSize(sizes[index])}）`;
+        link.setAttribute('role', 'menuitem');
+        link.style.display = 'block';
+        link.style.padding = '10px 12px';
+        link.style.borderRadius = '7px';
+        link.style.color = '#f4f4f8';
+        link.style.textDecoration = 'none';
+        link.style.whiteSpace = 'nowrap';
+        link.addEventListener('mouseover', () => { link.style.background = 'rgba(255,255,255,0.1)'; });
+        link.addEventListener('mouseout', () => { link.style.background = 'transparent'; });
+        menu.appendChild(link);
+      });
+    }
+
+    function closeMenu() {
+      menu.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    }
+
+    button.addEventListener('click', async () => {
+      const willOpen = menu.hidden;
+      if (!willOpen) {
+        closeMenu();
+        return;
+      }
+      menu.hidden = false;
+      button.setAttribute('aria-expanded', 'true');
+      if (!loaded) {
+        menu.textContent = '正在读取文件大小...';
+        await loadChoices();
+        menu.firstElementChild?.focus();
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (!wrapper.contains(event.target)) closeMenu();
+    });
+    wrapper.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+        button.focus();
+      }
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(menu);
+    return wrapper;
+  }
+
   function createCard(folderName, files, caption, config) {
     const card = document.createElement('article');
     card.style.background = 'rgba(255,255,255,0.04)';
@@ -483,29 +605,10 @@
     captionEl.style.color = '#d4d4e1';
     captionEl.style.fontSize = '0.95rem';
 
-    const downloadUrl = files.large;
-    if (downloadUrl) {
-      const downloadBtn = document.createElement('a');
-      downloadBtn.href = downloadUrl;
-      downloadBtn.download = downloadUrl.slice(downloadUrl.lastIndexOf('/') + 1);
-      downloadBtn.textContent = '下载';
-      downloadBtn.style.display = 'inline-flex';
-      downloadBtn.style.alignItems = 'center';
-      downloadBtn.style.justifyContent = 'center';
-      downloadBtn.style.marginTop = '12px';
-      downloadBtn.style.padding = '10px 14px';
-      downloadBtn.style.borderRadius = '12px';
-      downloadBtn.style.border = '1px solid rgba(255,255,255,0.16)';
-      downloadBtn.style.background = 'rgba(255,255,255,0.06)';
-      downloadBtn.style.color = '#f4f4f8';
-      downloadBtn.style.textDecoration = 'none';
-      downloadBtn.style.fontSize = '0.95rem';
-      downloadBtn.style.cursor = 'pointer';
-      downloadBtn.style.transition = 'background 0.2s ease';
-      downloadBtn.addEventListener('mouseover', () => { downloadBtn.style.background = 'rgba(255,255,255,0.12)'; });
-      downloadBtn.addEventListener('mouseout', () => { downloadBtn.style.background = 'rgba(255,255,255,0.06)'; });
+    const downloadControl = createDownloadControl(files);
+    if (downloadControl) {
       captionEl.appendChild(document.createElement('br'));
-      captionEl.appendChild(downloadBtn);
+      captionEl.appendChild(downloadControl);
     }
 
     figure.appendChild(captionEl);
